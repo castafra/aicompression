@@ -3,6 +3,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import pandas as pd
 import plotly.express as px
+from dash.dependencies import Input, Output
 
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
@@ -38,6 +39,61 @@ This application was developped as part of a end of study projet by Mehdi A. and
 fig = px.bar(df, x="Fruit", y="Amount", color="City", barmode="group")
 
 app.layout = html.Div(children=[
+    html.Div(children=[
+    html.Label('Dropdown'),
+    dcc.Dropdown(
+        options=[
+            {'label': 'New York City', 'value': 'NYC'},
+            {'label': u'Montréal', 'value': 'MTL'},
+            {'label': 'San Francisco', 'value': 'SF'}
+        ],
+        value='MTL'
+    ),
+
+    html.Label('Multi-Select Dropdown'),
+    dcc.Dropdown(
+        options=[
+            {'label': 'New York City', 'value': 'NYC'},
+            {'label': u'Montréal', 'value': 'MTL'},
+            {'label': 'San Francisco', 'value': 'SF'}
+        ],
+        value=['MTL', 'SF'],
+        multi=True,
+        id = 'my_dropdown_input'
+    ),
+    html.Br(),
+    html.Div(id='my_dropdown_output', children = 'hello'),
+
+    html.Label('Radio Items'),
+    dcc.RadioItems(
+        options=[
+            {'label': 'New York City', 'value': 'NYC'},
+            {'label': u'Montréal', 'value': 'MTL'},
+            {'label': 'San Francisco', 'value': 'SF'}
+        ],
+        value='MTL'
+    ),
+
+    html.Label('Checkboxes'),
+    dcc.Checklist(
+        options=[
+            {'label': 'New York City', 'value': 'NYC'},
+            {'label': u'Montréal', 'value': 'MTL'},
+            {'label': 'San Francisco', 'value': 'SF'}
+        ],
+        value=['MTL', 'SF']
+    ),
+
+    html.Label('Text Input'),
+    dcc.Input(value='MTL', type='text'),
+
+    html.Label('Slider'),
+    dcc.Slider(
+        min=0,
+        max=9,
+        marks={i: 'Label {}'.format(i) if i == 1 else str(i) for i in range(1, 6)},
+        value=5,
+    )],style = {'columnCount':2}),
     html.H1(children='AI Compression Toolbox', style={
         'textAlign': 'center'}),
 
@@ -54,6 +110,15 @@ app.layout = html.Div(children=[
     generate_table(df2),
     dcc.Markdown(children=markdown_text)
 ])
+
+
+@app.callback(
+    Output(component_id='my_dropdown_output', component_property='children'),
+    Input(component_id='my_dropdown_input', component_property='value')
+)
+def update_output_div(input_value):
+    return 'Output: {}'.format(input_value)
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
