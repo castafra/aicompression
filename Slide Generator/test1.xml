@@ -1,0 +1,14 @@
+<?xml version="1.0" ?>
+<annotation>
+  <folder>Slide Generator</folder>
+  <filename>test1.jpg</filename>
+  <path>C:\Users\François\Documents\GitHub\aicompression\Slide Generator\images_generated\test1.jpg</path>
+  <source>
+    <database>Unknown</database>
+  </source>
+  <size>
+    <width>1920</width>
+    <height>2</height>
+    <width>1920</width>
+  </size>
+</annotation>
