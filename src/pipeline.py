@@ -2,7 +2,7 @@ import time
 import matplotlib
 import warnings
 import matplotlib.pyplot as plt
-from PIL import Image
+from PIL import Image, ImageDraw
 import numpy as np
 import pandas as pd
 from object_detection.builders import model_builder
@@ -128,4 +128,22 @@ class compressor():
         box : list [y_min,x_min,y_max,x_max] representing the region of the image where we want to detect text
         """
 
-        pass
+    def background_retrieve(self, detected_objects, image):
+        """Returns the retrieved background based on the objects detected
+
+        Args:
+        detected_objects: dataframe of objects boxes and their classes
+
+        Returns:
+        a PIL image of the retrieved slide background
+        """
+
+        draw_slide = ImageDraw.Draw(image)
+        for i in range(len(detected_objects)):
+            r, g, b = image.getpixel(((detected_objects['box'].loc[i][1] + detected_objects['box'].loc[i][3]) // 2,
+                                      detected_objects['box'].loc[i][0] - 1))
+            draw_slide.rectangle(
+                [(detected_objects['box'].loc[i][1], detected_objects['box'].loc[i][0]),
+                 (detected_objects['box'].loc[i][3], detected_objects['box'].loc[i][2])], (r, g, b))
+        image.show()
+        return image
