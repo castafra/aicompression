@@ -38,7 +38,7 @@ class compressor():
         image, shapes = self.detection_model.preprocess(image)
         prediction_dict = self.detection_model.predict(image, shapes)
         detections = self.detection_model.postprocess(prediction_dict, shapes)
-
+        
         return detections
 
     def load_image_into_numpy_array(self, path):
@@ -66,6 +66,7 @@ class compressor():
         a dataframe with the detected boxes and the corresponding classes
         """
         image_np = self.load_image_into_numpy_array(image_path)
+        self.image_np = image_np
         image_shape = image_np.shape
         input_tensor = tf.convert_to_tensor(
             np.expand_dims(image_np, 0), dtype=tf.float32)
@@ -81,8 +82,9 @@ class compressor():
         self.detections = detections
 
         detected_boxes_raw = detections['detection_boxes'][detections['detection_scores'] > 0.5]
-        dims = np.diag([image_shape[0],image_shape[1],image_shape[0],image_shape[1]])
-        detected_boxes = list(np.dot(detected_boxes_raw,dims).astype(int))
+        dims = np.diag([image_shape[0], image_shape[1],
+                       image_shape[0], image_shape[1]])
+        detected_boxes = list(np.dot(detected_boxes_raw, dims).astype(int))
         detected_classes_ids = detections['detection_classes'][detections['detection_scores'] > 0.5]+1
         detected_classes = []
         for k in range(len(detected_classes_ids)):
@@ -93,4 +95,37 @@ class compressor():
             {'box': detected_boxes, 'class': detected_classes})
         self.detected_objects = detected_objects
         return detected_objects
+    
+    def visualize_detections(self):
+        """
+        Return a matplotlib image of the detections for the last image to which
+        the object detection has been performed
+        """
+        detections = self.detections
+        label_id_offset = 1
+        image_np_with_detections = self.image_np.copy()
 
+        viz_utils.visualize_boxes_and_labels_on_image_array(
+                    image_np_with_detections,
+                    detections['detection_boxes'],
+                    detections['detection_classes']+label_id_offset,
+                    detections['detection_scores'],
+                    self.category_index,
+                    use_normalized_coordinates=True,
+                    max_boxes_to_draw=10,
+                    min_score_thresh=0.2,
+                    agnostic_mode=False)
+
+        plt.figure()
+        plt.imshow(image_np_with_detections)
+        plt.show()
+
+    def perform_ocr(self,image,box):
+        """
+        Perform OCR (Optical Image Recognition) on the region of an image
+        Args : 
+        image : numpy array image on which to perform OCR
+        box : list [y_min,x_min,y_max,x_max] representing the region of the image where we want to detect text
+        """
+
+        pass
