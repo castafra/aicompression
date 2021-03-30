@@ -1,6 +1,15 @@
 from pipeline import *
+from PIL import Image
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Users\François\Documents\GitHub\tesseract'
 
-compressor = compressor(PATH_TO_OD_LABELS="C:\\Users\\samze\\Documents\\GitHub\\aicompression\\models\\object_detection\\labels",PATH_TO_OD_MODEL_DIR="C:\\Users\\samze\\Documents\\GitHub\\aicompression\\models\\object_detection")
 
-detections = compressor.detect_objects("C:\\Users\\samze\\Pictures\\Reduction.jpg")
-print(detections)
+"""
+compression = compressor(PATH_TO_OD_LABELS="../models/object_detection/labels",PATH_TO_OD_MODEL_DIR="../models/object_detection")
+
+detections = compression.detect_objects("C:\\Users\\François\\Documents\\GitHub\\aicompression\\Slide Generator\\images_generated\\explanation.jpg")
+
+compression.visualize_detections()
+"""
+img = Image.open('C:\\Users\\François\\Documents\\GitHub\\aicompression\\Slide Generator\\images_generated\\explanation.jpg')
+print(pytesseract.image_to_string(img))
