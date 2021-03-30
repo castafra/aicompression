@@ -4,10 +4,10 @@ Created on Tue Mar 16 17:07:47 2021
 
 @author: samze
 """
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageChops
 import pandas as pd
 
-#output= array([xmin1,ymin1,xmax1,ymax1],[xmin2,ymin2,ymin2,ymax2])
+
 '''detection_classes': array([0, 1, 0, 2, 0, 0, 0, 0, 0, 0, 2, 2, 0, 2, 0, 1, 0, 2, 0, 2, 2, 2,
        0, 0, 2, 1, 1, 0, 2, 0, 2, 0, 0, 1, 2, 2, 0, 2, 0, 2, 2, 0, 2, 0,
        0, 2, 2, 0, 0, 2, 2, 0, 2, 0, 0, 1, 2, 2, 0, 0, 2, 0, 0, 2, 0, 0,
@@ -51,11 +51,9 @@ def retrieve_background(df,slide):
     draw_slide=ImageDraw.Draw(slide)
     for i in range(len(df)):
         r, g, b = slide.getpixel(((df['box'].loc[i][1]+df['box'].loc[i][3])//2 , df['box'].loc[i][0]-1 ))
-        draw_slide.rectangle([(df['box'].loc[i][1],df['box'].loc[i][0]),(df['box'].loc[i][3], df['box'].loc[i][2])] , (r,g,b) )
+        draw_slide.rectangle([(df['box'].loc[i][1]-10,df['box'].loc[i][0]-10),(df['box'].loc[i][3]+10, df['box'].loc[i][2]+10)] , (r,g,b) )
     slide.show()
-    return slide
-output, classes=output_from_df(df_test)
-remove_elements(output,img,classes)
+    return ()
 
 #---------------------------- BROUILLON ---------------------------------------
 
@@ -73,22 +71,74 @@ def remove_elements_0(out, slide, classes):
     #identify forms 
     return slide
 
-    
-def fill_black_1(out, slide, classes):
-    for i in range(len(out)):
-        pixel_up = slide.getpixel((out[i][0]+out[i][2])//2, out[i][1]-1)
-        pixel_down = slide.getpixel((out[i][0]+out[i][2])//2, out[i][3]+1)
-        pixel_left = slide.getpixel(out[i][0]-1, (out[i][1]+out[i][3])//2)
-        pixel_right = slide.getpixel(out[i][2]+1, (out[i][1]+out[i][3])//2)
-        for x in range(out[i][0],out[i][1]):
-                for y in range (out[i][2],out[i][3]):
-                    slide.putpixel((x, y), 1)
-    return 'ok'
+
+def fill_black_1(detected_objects, image):
+    draw_slide=ImageDraw.Draw(image)
+    for i in range(len(detected_objects)):
+        x=detected_objects['box'].loc[i][1]
+        y=detected_objects['box'].loc[i][0]
+        r0, b0, g0 = image.getpixel(x,y)
+        vert_band_not_found = True
+        hor_band_not_found = True
+        #hypothesis : max 1 color band per box
+        while x< detected_objects['box'].loc[i][3] and vert_band_not_found:
+            r, g, b = image.getpixel((x, y))
+            vert_band_not_found=vert_band_not_found and (r, g, b == image.getpixel((x+1, y)))
+            x+=1
+        if vert_band_not_found:
+            """draw_slide.rectangle([(detected_objects['box'].loc[i][1],detected_objects['box'].loc[i][0]),
+                                  (detected_objects['box'].loc[i][3], detected_objects['box'].loc[i][2])] , (r,g,b) )
+        #add vertical band research
+        else:"""
+            while y< detected_objects['box'].loc[i][2] and hor_band_not_found:
+                r, g, b = image.getpixel((x, y))
+                hor_band_not_found = hor_band_not_found and (r, g, b == image.getpixel((x, y+1)))
+                y+=1
+            if not hor_band_not_found:
+                draw_slide.rectangle([(detected_objects['box'].loc[i][1],
+                                           detected_objects['box'].loc[i][0]),
+                                              (detected_objects['box'].loc[i][3],
+                                                   y)],
+                                                       (r0, b0, g0) )
+                draw_slide.rectangle([(detected_objects['box'].loc[i][1],y+1),
+                                          (detected_objects['box'].loc[i][3],
+                                               detected_objects['box'].loc[i][2])],
+                                                    (r,g,b) )
+            else: #a check
+                draw_slide.rectangle([(detected_objects['box'].loc[i][1],
+                                 detected_objects['box'].loc[i][0]),
+                                     (x, detected_objects['box'].loc[i][2])],
+                                         (r0,g0,b0) )
+                
+        else:
+            draw_slide.rectangle([(detected_objects['box'].loc[i][1],
+                                 detected_objects['box'].loc[i][0]),
+                                     (x, detected_objects['box'].loc[i][2])],
+                                         (r0,g0,b0) )
+
+            r,g,b= image.getpixel((x+1, y))
+            draw_slide.rectangle([(x+1,detected_objects['box'].loc[i][0]),
+                                  (detected_objects['box'].loc[i][3], 
+                                   detected_objects['box'].loc[i][2])] , (r,g,b) )
         
+
+        image.show()
+    return None        
         
-                       
-            
-            
+point_table = ([0] + ([255] * 255))
+
+def black_or_b(a, b):
+    diff = ImageChops.difference(a, b)
+    diff = diff.convert('L')
+    diff = diff.point(point_table)
+    new = diff.convert('RGB')
+    new.paste(b, mask=diff)
+    return new
+
+a = Image.open('a.png')
+b = Image.open('b.png')
+c = black_or_b(a, b)
+c.save('c.png')
 
 
 
