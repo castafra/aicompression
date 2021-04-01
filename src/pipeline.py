@@ -9,6 +9,8 @@ from object_detection.builders import model_builder
 from object_detection.utils import visualization_utils as viz_utils
 from object_detection.utils import config_util
 from object_detection.utils import label_map_util
+import pytesseract
+pytesseract.pytesseract.tesseract_cmd = r'C:\Program Files\Tesseract-OCR\tesseract'
 import tensorflow as tf
 import pathlib
 import os
@@ -54,7 +56,9 @@ class compressor():
         Returns:
         uint8 numpy array with shape (img_height, img_width, 3)
         """
-        return np.array(Image.open(path))
+        self.img_path = path
+        img = Image.open(path)
+        return np.array(img)
 
     def detect_objects(self, image_path):
         """Returns the objects detected in a given image
@@ -68,6 +72,7 @@ class compressor():
         image_np = self.load_image_into_numpy_array(image_path)
         self.image_np = image_np
         image_shape = image_np.shape
+        self.img_shape = image_shape
         input_tensor = tf.convert_to_tensor(
             np.expand_dims(image_np, 0), dtype=tf.float32)
         detections = self.detect_fn(input_tensor)
@@ -81,11 +86,11 @@ class compressor():
             np.int64)
         self.detections = detections
 
-        detected_boxes_raw = detections['detection_boxes'][detections['detection_scores'] > 0.5]
+        detected_boxes_raw = detections['detection_boxes'][detections['detection_scores'] > 0.45]
         dims = np.diag([image_shape[0], image_shape[1],
                        image_shape[0], image_shape[1]])
         detected_boxes = list(np.dot(detected_boxes_raw, dims).astype(int))
-        detected_classes_ids = detections['detection_classes'][detections['detection_scores'] > 0.5]+1
+        detected_classes_ids = detections['detection_classes'][detections['detection_scores'] > 0.45]+1
         detected_classes = []
         for k in range(len(detected_classes_ids)):
             detected_classes.append(
@@ -93,6 +98,7 @@ class compressor():
 
         detected_objects = pd.DataFrame(
             {'box': detected_boxes, 'class': detected_classes})
+        print(detected_objects)
         self.detected_objects = detected_objects
         return detected_objects
     
@@ -120,15 +126,28 @@ class compressor():
         plt.imshow(image_np_with_detections)
         plt.show()
 
-    def perform_ocr(self,image,box):
+    def perform_ocr(self):
         """
         Perform OCR (Optical Image Recognition) on the region of an image
         Args : 
         image : numpy array image on which to perform OCR
         box : list [y_min,x_min,y_max,x_max] representing the region of the image where we want to detect text
         """
+        print(self.img_shape)
+        text_boxes = self.detected_objects[self.detected_objects["class"] == "text"].reset_index()
+        image = Image.open(self.img_path)
+        for i in range(len(text_boxes)):
+            box = text_boxes.box[i] 
+            box[0] = max(0,box[0] - (box[2]-box[0])/10)
+            box[1] = max(0,box[1] - (box[3]-box[1])/10)
+            box[2] = min(self.img_shape[0],box[2] + (box[2]-box[0])/10)
+            box[3] = min(self.img_shape[1],box[3] + (box[3]-box[1])/10)
+            box_crop = (box[1],box[0],box[3],box[2])
+            img_cropped = image.crop(box_crop)
+            text = pytesseract.image_to_string(img_cropped)
+            print(text)
 
-    def background_retrieve(self, detected_objects, image):
+    def background_retrieve(self):
         """Returns the retrieved background based on the objects detected
 
         Args:
@@ -137,13 +156,13 @@ class compressor():
         Returns:
         a PIL image of the retrieved slide background
         """
-
+        image = Image.open(self.img_path)
         draw_slide = ImageDraw.Draw(image)
-        for i in range(len(detected_objects)):
-            r, g, b = image.getpixel(((detected_objects['box'].loc[i][1] + detected_objects['box'].loc[i][3]) // 2,
-                                      detected_objects['box'].loc[i][0] - 1))
+        for i in range(len(self.detected_objects)):
+            r, g, b = image.getpixel(((int(self.detected_objects['box'].loc[i][1] + self.detected_objects['box'].loc[i][3]) // 2),
+                                      int(self.detected_objects['box'].loc[i][0] - 1)))
             draw_slide.rectangle(
-                [(detected_objects['box'].loc[i][1], detected_objects['box'].loc[i][0]),
-                 (detected_objects['box'].loc[i][3], detected_objects['box'].loc[i][2])], (r, g, b))
+                [(self.detected_objects['box'].loc[i][1], self.detected_objects['box'].loc[i][0]),
+                 (self.detected_objects['box'].loc[i][3], self.detected_objects['box'].loc[i][2])], (r, g, b))
         image.show()
         return image

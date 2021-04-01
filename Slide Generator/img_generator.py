@@ -355,7 +355,8 @@ def create_slide(ratio = 2/3, size = 1920, name = "slide1", type = "illustration
     xml_file = codecs.open("images_generated/"+name +'.xml',"w",'utf-8')
     xml_file.write(prettify(annotation))
 
-for k in range(5000):
-    type_int = random.randint(0,2)
-    type_ill = slide_types[type_int]
-    create_slide(type= type_ill, name = 'slide_'+str(k+6126))
+if __name__ == "__main__":
+    for k in range(5000):
+        type_int = random.randint(0,2)
+        type_ill = slide_types[type_int]
+        create_slide(type= type_ill, name = 'slide_'+str(k+6126))
