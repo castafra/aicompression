@@ -5,6 +5,7 @@ import matplotlib.pyplot as plt
 from PIL import Image, ImageDraw
 import numpy as np
 import pandas as pd
+import cv2
 from object_detection.builders import model_builder
 from object_detection.utils import visualization_utils as viz_utils
 from object_detection.utils import config_util
@@ -18,6 +19,35 @@ os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'    # Suppress TensorFlow logging (1)
 warnings.filterwarnings('ignore')   # Suppress Matplotlib warnings
 matplotlib.use('tkagg')
 
+class CompareImage(object):
+
+    def __init__(self, image_1_path, image_2_path):
+        self.minimum_commutative_image_diff = 1
+        self.image_1_path = image_1_path
+        self.image_2_path = image_2_path
+
+    def compare_image(self):
+        image_1 = plt.imread(self.image_1_path, 0)
+        image_2 = plt.imread(self.image_2_path, 0)
+        commutative_image_diff = self.get_image_difference(image_1, image_2)
+
+        if commutative_image_diff < self.minimum_commutative_image_diff:
+            print("Matched")
+            return commutative_image_diff
+        return 10000 #random failure value
+
+    @staticmethod
+    def get_image_difference(image_1, image_2):
+        first_image_hist = cv2.calcHist([image_1], [0], None, [256], [0, 256])
+        second_image_hist = cv2.calcHist([image_2], [0], None, [256], [0, 256])
+
+        img_hist_diff = cv2.compareHist(first_image_hist, second_image_hist, cv2.HISTCMP_BHATTACHARYYA)
+        img_template_probability_match = cv2.matchTemplate(first_image_hist, second_image_hist, cv2.TM_CCOEFF_NORMED)[0][0]
+        img_template_diff = 1 - img_template_probability_match
+
+        # taking only 10% of histogram diff, since it's less accurate than template method
+        commutative_image_diff = (img_hist_diff / 10) + img_template_diff
+        return commutative_image_diff
 
 class compressor():
     def __init__(self, PATH_TO_OD_MODEL_DIR="../training_od/exported-models/model_generatedslides_V1", PATH_TO_OD_LABELS="../training_od/annotations") -> None:
@@ -129,15 +159,16 @@ class compressor():
     def perform_ocr(self):
         """
         Perform OCR (Optical Image Recognition) on the region of an image
-        Args : 
-        image : numpy array image on which to perform OCR
-        box : list [y_min,x_min,y_max,x_max] representing the region of the image where we want to detect text
+        Returns : 
+        texts : a dictionnary with the text and the box region where it is
         """
         print(self.img_shape)
         text_boxes = self.detected_objects[self.detected_objects["class"] == "text"].reset_index()
         image = Image.open(self.img_path)
+        texts = dict()
         for i in range(len(text_boxes)):
             box = text_boxes.box[i] 
+            # We add a morgin to all edges to be sure to crop all the text section
             box[0] = max(0,box[0] - (box[2]-box[0])/10)
             box[1] = max(0,box[1] - (box[3]-box[1])/10)
             box[2] = min(self.img_shape[0],box[2] + (box[2]-box[0])/10)
@@ -145,7 +176,9 @@ class compressor():
             box_crop = (box[1],box[0],box[3],box[2])
             img_cropped = image.crop(box_crop)
             text = pytesseract.image_to_string(img_cropped)
-            print(text)
+            texts[i] = {"box" : text_boxes.box[i], "text": text}
+        self.detected_texts = texts
+        return texts
 
     def background_retrieve(self):
         """Returns the retrieved background based on the objects detected
