@@ -10,8 +10,10 @@ from xml.etree.ElementTree import Element, SubElement, Comment, tostring
 from xml.etree import ElementTree
 from xml.dom import minidom
 import codecs
+from tqdm import tqdm
 
-generator = pipeline('text-generation', model='distilgpt2', device=0)
+
+generator = pipeline('text-generation', model='sshleifer/tiny-gpt2', device=0)
 
 
 words = pd.read_csv("common_words.csv")
@@ -49,7 +51,7 @@ def hsv2rgb(h, s, v):
     r, g, b = int(r * 255), int(g * 255), int(b * 255)
     return r, g, b
 
-def  generate_text(length = 50, maxi = 100):
+def generate_text(length = 50, maxi = 100):
     N = len(words_list)
     pos = random.randint(0,N-1)
     text = generator(words_list[pos], min_length=length, max_length = maxi, num_return_sequences=1)
@@ -348,15 +350,112 @@ def create_slide(ratio = 2/3, size = 1920, name = "slide1", type = "illustration
         #image_editable.rectangle([x_img1,y_img1,x_img1+w_img1,y_img1+h_img1], outline= (0, 0, 0))
         add_xml_object('image',annotation,x_img1,y_img1,x_img1+w_img1,y_img1+h_img1)
     
-    
-    
 
     background.save("images_generated/"+name+".jpg") ## Save Image
     xml_file = codecs.open("images_generated/"+name +'.xml',"w",'utf-8')
     xml_file.write(prettify(annotation))
 
-if __name__ == "__main__":
+def text_wrap(text,font,writing,max_width,max_height):
+    lines = [[]]
+    words = text.split()
+    for word in words:
+        # try putting this word in last line then measure
+        lines[-1].append(word)
+        (w,h) = writing.multiline_textsize('\n'.join([' '.join(line) for line in lines]), font=font)
+        if w > max_width: # too wide
+            # take it back out, put it on the next line, then measure again
+            lines.append([lines[-1].pop()])
+            (w,h) = writing.multiline_textsize('\n'.join([' '.join(line) for line in lines]), font=font)
+            if h > max_height: # too high now, cannot fit this word in, so take out - add ellipses
+                lines.pop()
+                # try adding ellipses to last word fitting (i.e. without a space)
+                #lines[-1][-1] += '...'
+                # keep checking that this doesn't make the textbox too wide, 
+                # if so, cycle through previous words until the ellipses can fit
+                while writing.multiline_textsize('\n'.join([' '.join(line) for line in lines]),font=font)[0] > max_width:
+                    if len(lines[-1])>0:
+                        lines[-1].pop()
+                    else :
+                        lines.pop()
+                    #lines[-1][-1] += '...'
+                break
+    return '\n'.join([' '.join(line) for line in lines])
+
+def create_text_images(name, features):
+    font_id = random.randint(0,len(fonts)-1)
+    font_chosen = fonts[font_id]
+    ## Choose Theme
+    m = random.random()
+    mode_clair = True
+    S = random.randint(0,25)/100
+    H = random.randint(0,360)
+    if m < 0.8 :#Mode clair
+        V = 1
+        text_color = hsv2rgb(random.randint(0,360),1,random.randint(50,70)/100)
+    else : # Mode sombre
+        mode_clair = False
+        V = random.randint(20,40)/100
+        text_color = (255,255,255)
+    
+    background_color  = hsv2rgb(H,S,V)
+
+    width_min = 200
+    width_max = 1500
+    height_min = 75
+    height_max = 800
+
+
+    background = Image.new('RGB', (random.randint(width_min,width_max),random.randint(height_min,height_max)), color = background_color)
+    image_editable = ImageDraw.Draw(background)
+    W, H = background.size
+    text = generate_text(length = 500, maxi=700)
+    #size_text = int(W/random.randint(1.5*10,1.5*70))
+    size_text = random.randint(40,60)
+    font = ImageFont.truetype('fonts/' + font_chosen, size_text)
+    
+    text_wrapped = text_wrap(text,font,image_editable,W,H)
+    """
+    y_text = 0
+    w_num, h_num = font.getsize(text)
+    x_pos = 0
+    y_pos = 0
+    print(W)
+    lines = textwrap.wrap(text,width=int(W/size_text))
+    print(lines)
+    ws = []
+    for line in lines:
+        w, h = font.getsize(line)
+        if y_text+y_pos+3*h/2 < H :
+            ws.append(w)
+            image_editable.text((x_pos,y_pos+y_text), line, text_color, font=font)
+            y_text+= 3*h/2
+    """
+    image_editable.text((0,0), text_wrapped, text_color, font=font)
+    
+    features = features.append(pd.DataFrame({"name": [name], "font": [font_chosen], 'size': [size_text], "color": [text_color]}), ignore_index = True)
+    
+
+    background.save("text_images_generated/"+name+".jpg")
+    return features
+
+
+def generate_slides(n=5000):
     for k in range(5000):
         type_int = random.randint(0,2)
         type_ill = slide_types[type_int]
         create_slide(type= type_ill, name = 'slide_'+str(k+6126))
+
+def generate_text_images(n = 100, start = 0):
+    features = pd.read_csv("text_images_generated/features.csv")[["name","font","size","color"]]
+    for k in range(n):
+        features = create_text_images("img_"+str(k+start),features)
+    features.to_csv("text_images_generated/features.csv")
+
+if __name__ == "__main__":
+    #Generate 5000 images
+    #generate_slides(5000)
+    #font_dt = pd.DataFrame({"fonts" : fonts})
+    #font_dt.to_csv("text_images_generated/fonts.csv")
+    generate_text_images(n = 1000, start=102)
+    
+    #Generate images of text for font recognition 
