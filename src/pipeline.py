@@ -51,6 +51,7 @@ class CompareImage(object):
 
 class compressor():
     def __init__(self, PATH_TO_OD_MODEL_DIR="../training_od/exported-models/model_generatedslides_V1", PATH_TO_OD_LABELS="../training_od/annotations") -> None:
+        
         self.configs = config_util.get_configs_from_pipeline_file(
             PATH_TO_OD_MODEL_DIR + "/pipeline.config")
         self.model_config = self.configs['model']

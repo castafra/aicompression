@@ -445,14 +445,17 @@ def generate_slides(n=5000):
         type_ill = slide_types[type_int]
         create_slide(type= type_ill, name = 'slide_'+str(k+6126))
 
+def generate_text_images(n = 100, start = 0):
+    features = pd.read_csv("text_images_generated/features.csv")[["name","font","size","color"]]
+    for k in range(n):
+        features = create_text_images("img_"+str(k+start),features)
+    features.to_csv("text_images_generated/features.csv")
+
 if __name__ == "__main__":
     #Generate 5000 images
     #generate_slides(5000)
-    font_dt = pd.DataFrame({"fonts" : fonts})
-    font_dt.to_csv("text_images_generated/fonts.csv")
-    features = pd.DataFrame(columns=["name","font","size","color"])
-    print(features)
-    for k in range(100):
-        features = create_text_images("img_"+str(k),features)
-    features.to_csv("text_images_generated/features.csv")
+    #font_dt = pd.DataFrame({"fonts" : fonts})
+    #font_dt.to_csv("text_images_generated/fonts.csv")
+    generate_text_images(n = 1000, start=102)
+    
     #Generate images of text for font recognition 
