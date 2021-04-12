@@ -164,8 +164,11 @@ def run_script_onClick(n_clicks,filename,contents):
     print(filename)
     output_content = compression.detect_objects(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\input_images\\{filename}")
     viz_od = compression.visualize_detections()
+    print(viz_od)
+    fig = px.imshow(viz_od)
+
     # Now return.
-    return Image.fromarray(viz_od)
+    return fig.show()
 
 
 #display input image in the second sheet
