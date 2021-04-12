@@ -33,7 +33,7 @@ server = app.server  # Expose the server variable for deployments
 
 # declare table contents
 # ******************************************
-tab1_content = dbc.Card(
+tab1_content = dbc.Card([
     dbc.CardBody(
         [
             dcc.Upload(id='upload-image',
@@ -55,18 +55,19 @@ tab1_content = dbc.Card(
                         # Don't allow multiple files to be uploaded
                         multiple=False
                     ),
-            dbc.Col(html.Div(id='image-uploaded-1'), width='6'),
-            dbc.Col(html.Div(id='object-detection-image'), width='6')
+        ],
+        className="font-weight-light"),
+    dbc.Row([
+        dbc.Col(html.Div(id='image-uploaded-1'), width='4'),
+        dbc.Col(dbc.CardImg(id='object-detection-image', src=[]), width='4')
         ]
-    ),
-    className="font-weight-light",
-)
+    )
+])
 
 tab2_content = dbc.Card(
     dbc.CardBody(
         [
-            dbc.Row("Please add a slide on sheet 1"),
-            dbc.Col(html.Div(id='image-uploaded-2'), width='12')
+            dbc.Col(html.Div(id='image-uploaded-2'), width='4')
         ]
     ),
     className="mt-3",
@@ -131,64 +132,69 @@ app.layout = dbc.Container([
 
 @app.callback(Output('image-uploaded-1','children'),
               [Input('upload-image', 'contents')],
-              [State('upload-image', 'filename'),
-              State('upload-image', 'last_modified')])
+              [State('upload-image', 'filename')])
 
-def parse_contents_1(contents, filename, date):
+def parse_contents_1(contents, filename):
+    if not contents:
+        raise PreventUpdate
     return dbc.Col([
         html.H5(filename),
-        dbc.CardImg(src=contents, style={'height':'50%', 'width': '50%'}),
+        dbc.CardImg(src=contents, style={'height': '50%', 'width': '50%'}),
         dbc.Row(dbc.Button(id='run-object-detection', children='Run Object Detection', color='success'))
-    ], width={'size':12})
+    ], width='6')
 
 
-def update_output_1(list_of_contents, list_of_names, list_of_dates):
+def update_output_1(list_of_contents, list_of_names):
     if list_of_contents is not None:
         children = [
-            parse_contents_1(list_of_contents, list_of_names, list_of_dates) ]
+            parse_contents_1(list_of_contents, list_of_names) ]
         return children
 
 #run object detection after clicking on the button
 
-@app.callback(Output('object-detection-image', 'children'),
-             [Input('run-object-detection', 'n_clicks'),Input('upload-image','filename')],
+@app.callback(Output('object-detection-image', 'src'),
+             [Input('run-object-detection', 'n_clicks'),
+              Input('upload-image','filename')],
              [State('upload-image','contents')])
 
-def run_script_onClick(n_clicks,filename,contents):
+def run_script_onClick(n_clicks, filename, contents):
     # Don't run unless the button has been pressed...
     if not n_clicks:
         raise PreventUpdate
-    
+    ''''
     # Load your output file with "some code"
     compression = compressor(PATH_TO_OD_LABELS=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection\\labels", PATH_TO_OD_MODEL_DIR=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection")
     print(filename)
     output_content = compression.detect_objects(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\input_images\\{filename}")
     viz_od = compression.visualize_detections()
     print(viz_od)
-    fig = px.imshow(viz_od)
-
-    # Now return.
-    return fig.show()
+    fig = px.imshow(viz_od)'''
+    img = np.zeros([100, 100, 3], dtype=np.uint8)
+    img.fill(255)  # or img[:] = 255
+    img_test = Image.fromarray(img)
+    img_test.save(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\output_images\\{filename}")
+    return img_test
 
 
 #display input image in the second sheet
 
 @app.callback(Output('image-uploaded-2', 'children'),
               [Input('upload-image', 'contents')],
-              [State('upload-image', 'filename'),
-              State('upload-image', 'last_modified')])
+              [State('upload-image', 'filename')])
 
-def parse_contents_2(contents, filename, date):
+def parse_contents_2(contents, filename):
+    if not contents:
+        raise PreventUpdate
     return dbc.Col([
         html.H5(filename),
         dbc.CardImg(src=contents, style={'height':'50%', 'width': '50%'}),
         dbc.Row(dbc.Button(id='run-background-retrieval', children='Run background retrieval', color='success'))
     ], width={'size':12})
 
-def update_output_2(list_of_contents, list_of_names, list_of_dates):
+def update_output_2(list_of_contents, list_of_names):
     if list_of_contents is not None:
         children = [
-            parse_contents_2(list_of_contents, list_of_names, list_of_dates) ]
+            parse_contents_2(list_of_contents, list_of_names)]
         return children
 
 if __name__ == '__main__':
