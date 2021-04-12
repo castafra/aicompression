@@ -153,9 +153,10 @@ class compressor():
                     min_score_thresh=0.2,
                     agnostic_mode=False)
 
-        plt.figure()
-        plt.imshow(image_np_with_detections)
-        plt.show()
+        #plt.figure()
+        #plt.imshow(image_np_with_detections)
+        #plt.show()
+        return image_np_with_detections
 
     def perform_ocr(self):
         """

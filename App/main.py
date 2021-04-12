@@ -1,4 +1,9 @@
 import dash
+import sys
+import os
+from pathlib import Path
+home_path = Path.home()
+sys.path.append(f"{home_path}\\Documents\\GitHub\\aicompression")
 from src.pipeline import *
 from subprocess import call
 from dash.exceptions import PreventUpdate
@@ -10,7 +15,6 @@ import plotly.express as px
 import dash_bootstrap_components as dbc
 import pandas as pd
 from plotly.tools import mpl_to_plotly
-from model_matplotlib import img
 import plotly.graph_objects as go
 from PIL import Image
 import requests
@@ -147,23 +151,21 @@ def update_output_1(list_of_contents, list_of_names, list_of_dates):
 #run object detection after clicking on the button
 
 @app.callback(Output('object-detection-image', 'children'),
-             [Input('run-object-detection', 'n_clicks')])
+             [Input('run-object-detection', 'n_clicks'),Input('upload-image','filename')],
+             [State('upload-image','contents')])
 
-def run_script_onClick(n_clicks):
+def run_script_onClick(n_clicks,filename,contents):
     # Don't run unless the button has been pressed...
     if not n_clicks:
         raise PreventUpdate
-    script_path = 'C:/Users/samze/Documents/GitHub/aicompression/src/pipeline.py'
-    # The output of a script is always done through a file dump.
-    # Let's just say this call dumps some data into an `output_file`
-    call(["python3", script_path])
-
+    
     # Load your output file with "some code"
-    compression = compressor(PATH_TO_OD_LABELS="../models/object_detection/labels", PATH_TO_OD_MODEL_DIR="../models/object_detection")
-    output_content = compression.visualize_objects('upload-image')
-
+    compression = compressor(PATH_TO_OD_LABELS=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection\\labels", PATH_TO_OD_MODEL_DIR=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection")
+    print(filename)
+    output_content = compression.detect_objects(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\input_images\\{filename}")
+    viz_od = compression.visualize_detections()
     # Now return.
-    return output_content
+    return Image.fromarray(viz_od)
 
 
 #display input image in the second sheet
