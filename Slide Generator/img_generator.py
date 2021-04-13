@@ -456,6 +456,6 @@ if __name__ == "__main__":
     #generate_slides(5000)
     #font_dt = pd.DataFrame({"fonts" : fonts})
     #font_dt.to_csv("text_images_generated/fonts.csv")
-    generate_text_images(n = 1000, start=102)
+    generate_text_images(n = 500, start=1102)
     
     #Generate images of text for font recognition 

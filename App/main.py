@@ -161,19 +161,16 @@ def run_script_onClick(n_clicks, filename, contents):
     # Don't run unless the button has been pressed...
     if not n_clicks:
         raise PreventUpdate
-    ''''
+    
     # Load your output file with "some code"
     compression = compressor(PATH_TO_OD_LABELS=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection\\labels", PATH_TO_OD_MODEL_DIR=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection")
     print(filename)
     output_content = compression.detect_objects(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\input_images\\{filename}")
     viz_od = compression.visualize_detections()
-    print(viz_od)
-    fig = px.imshow(viz_od)'''
-    img = np.zeros([100, 100, 3], dtype=np.uint8)
-    img.fill(255)  # or img[:] = 255
-    img_test = Image.fromarray(img)
-    img_test.save(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\output_images\\{filename}")
-    return img_test
+    
+    img_out = Image.fromarray(viz_od)
+    img_out.save(f"{home_path}\\Documents\\GitHub\\aicompression\\App\\output_images\\{filename}")
+    return img_out
 
 
 #display input image in the second sheet
