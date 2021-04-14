@@ -117,11 +117,11 @@ class compressor():
             np.int64)
         self.detections = detections
 
-        detected_boxes_raw = detections['detection_boxes'][detections['detection_scores'] > 0.45]
+        detected_boxes_raw = detections['detection_boxes'][detections['detection_scores'] > 0.2]
         dims = np.diag([image_shape[0], image_shape[1],
                        image_shape[0], image_shape[1]])
         detected_boxes = list(np.dot(detected_boxes_raw, dims).astype(int))
-        detected_classes_ids = detections['detection_classes'][detections['detection_scores'] > 0.45]+1
+        detected_classes_ids = detections['detection_classes'][detections['detection_scores'] > 0.2]+1
         detected_classes = []
         for k in range(len(detected_classes_ids)):
             detected_classes.append(
