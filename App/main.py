@@ -286,9 +286,9 @@ def run_script_onClick(n_clicks, filename, contents):
         text=text_boxes[i].get("text")
         if len(text.replace(" ", "")) > 0 :
             fig.append(dbc.Row([
-                dbc.Col(html.Img(src=img_cropped, id='text_box_' + str(i+1), height=100), width= 7),
+                dbc.Col(html.Img(src=img_cropped, id='text_box_' + str(i+1), style={'height':'50%'}), width= 7),
                 dbc.Col(dbc.Textarea(id= 'text_' + str(i+1), placeholder=text,
-                className="text-center text-light font-weight-light, mb-4"), width=5)
+                className="text-center text-light font-weight-light, mb-4 h-50"), width=5)
             ]))
         #ax.text(3, 8, text, style='italic',
         #bbox={'facecolor': 'red', 'alpha': 0.5, 'pad': 10})

@@ -199,5 +199,5 @@ class compressor():
             draw_slide.rectangle(
                 [(self.detected_objects['box'].loc[i][1]-40, self.detected_objects['box'].loc[i][0]-10),
                  (self.detected_objects['box'].loc[i][3]+40, self.detected_objects['box'].loc[i][2]+10)], (r, g, b))
-        image.show()
+        
         return image
