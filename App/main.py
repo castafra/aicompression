@@ -6,6 +6,7 @@ from dash_bootstrap_components._components.Card import Card
 
 from dash_bootstrap_components._components.CardBody import CardBody
 from dash_bootstrap_components._components.CardImg import CardImg
+from numpy.core.fromnumeric import compress
 home_path = Path.home()
 sys.path.append(f"{home_path}\\Documents\\GitHub\\aicompression")
 from src.pipeline import *
@@ -15,9 +16,9 @@ from dash.dependencies import Input, Output, State
 import datetime
 import dash_core_components as dcc
 import dash_html_components as html
-import plotly.express as px
 import dash_bootstrap_components as dbc
 import pandas as pd
+from plotly.subplots import make_subplots
 from plotly.tools import mpl_to_plotly
 import plotly.graph_objects as go
 import plotly.express as px
@@ -98,13 +99,7 @@ tab3_content = dbc.Card(
         [
             dbc.Row("Please add a slide on sheet 1", className="btn-white font-weight-bold"),
             dbc.Row(html.Div(id='text-box-button')),
-            dbc.Row([
-                dbc.Col([
-                    html.Div(id='text-boxes')
-                ], width=6
-                ),
-                dbc.Col(dbc.CardImg(id='text-boxes-content', src=[]))
-            ])
+            dbc.Col(html.Div(children=[],id='text-boxes'), width=12),
         ])
     ),
 
@@ -265,7 +260,6 @@ def update_output_3(list_of_contents, list_of_names):
         return children
 
 #run text recognition after clicking on the button
-
 @app.callback(Output('text-boxes', 'children'),
              [Input('run-text-box', 'n_clicks'),
              Input('upload-image','filename')],
@@ -281,12 +275,56 @@ def run_script_onClick(n_clicks, filename, contents):
     #compression = compressor(PATH_TO_OD_LABELS=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection\\labels", PATH_TO_OD_MODEL_DIR=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection")
     
     #PIL image with retrieved background
-
+    img=Image.fromarray(compression.image_np)
     text_boxes = compression.perform_ocr()
-    return text_boxes
+    fig=[dbc.Row(id='text_box_0')]
+    for i in range(len(text_boxes)):
+        box=text_boxes[i].get("box")
+        box_crop = (box[1],box[0],box[3],box[2])
+        #crop = img[box[1]:box[3], box[0]:box[2]]
+        img_cropped=img.crop(box_crop)
+        text=text_boxes[i].get("text")
+        if len(text.replace(" ", "")) > 0 :
+            fig.append(dbc.Row([
+                dbc.Col(html.Img(src=img_cropped, id='text_box_' + str(i+1), height=100), width= 7),
+                dbc.Col(dbc.Textarea(id= 'text_' + str(i+1), placeholder=text,
+                className="text-center text-light font-weight-light, mb-4"), width=5)
+            ]))
+        #ax.text(3, 8, text, style='italic',
+        #bbox={'facecolor': 'red', 'alpha': 0.5, 'pad': 10})
+    return fig
+
+'''
+@app.callback(Output('text-boxes', 'figure'),
+             [Input('run-text-box', 'n_clicks'),
+             Input('upload-image','filename')],
+             [State('upload-image','contents')])
+
+def run_script_onClick(n_clicks, filename, contents):
+    # Don't run unless the button has been pressed...
+    if not n_clicks:
+        raise PreventUpdate
+    
+    # Load your output file with "some code"
+    #global compression 
+    #compression = compressor(PATH_TO_OD_LABELS=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection\\labels", PATH_TO_OD_MODEL_DIR=f"{home_path}\\Documents\\GitHub\\aicompression\\models\\object_detection")
+    
+    #PIL image with retrieved background
+    img=compression.image_np
+    text_boxes = compression.perform_ocr()
+    fig=make_subplots(rows=len(text_boxes), cols=2)
+    for i in range(len(text_boxes)):
+        box=text_boxes[i].get("box")
+        #box_crop = (box[1],box[0],box[3],box[2])
+        crop = img[box[1]:box[3], box[0]:box[2]]
+        #img_cropped=img.crop(box_crop)
+        text=text_boxes[i].get("text")
+        fig.add_trace(go.Image(z=crop), row=i+1, col=1)
+        fig.add_trace(go.Scatter(x=[0],y=[0],text=text, row=i+1, col=2))
+        #ax.text(3, 8, text, style='italic',
+        #bbox={'facecolor': 'red', 'alpha': 0.5, 'pad': 10})
+    return fig'''
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
-
-#dev_tools_ui=False to remove exceptions
+    app.run_server(debug=True, dev_tools_ui=False) 
 
