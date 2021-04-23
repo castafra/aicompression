@@ -194,10 +194,12 @@ class compressor():
         image = Image.open(self.img_path)
         draw_slide = ImageDraw.Draw(image)
         for i in range(len(self.detected_objects)):
+            xmin,xmax = self.detected_objects['box'].loc[i][1], self.detected_objects['box'].loc[i][3]
+            ymin,ymax = self.detected_objects['box'].loc[i][0], self.detected_objects['box'].loc[i][2]
             r, g, b = image.getpixel(((int(self.detected_objects['box'].loc[i][1] + self.detected_objects['box'].loc[i][3])// 2),
                                       int(self.detected_objects['box'].loc[i][0]-5)))
             draw_slide.rectangle(
-                [(self.detected_objects['box'].loc[i][1]-40, self.detected_objects['box'].loc[i][0]-10),
-                 (self.detected_objects['box'].loc[i][3]+40, self.detected_objects['box'].loc[i][2]+10)], (r, g, b))
+                [(max(0,xmin-0.3*(xmax-xmin)), self.detected_objects['box'].loc[i][0]-10),
+                 (min(image.size[0], xmax + 0.3*(xmax-xmin)), self.detected_objects['box'].loc[i][2]+10)], (r, g, b))
         
         return image

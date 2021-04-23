@@ -19,7 +19,7 @@ generator = pipeline('text-generation', model='sshleifer/tiny-gpt2', device=0)
 words = pd.read_csv("common_words.csv")
 
 slide_types = ['illustration','description','explanation']
-fonts = os.listdir('fonts')
+fonts = os.listdir('fonts/selected_fonts')
 
 words_list = words.list
 
@@ -395,7 +395,7 @@ def create_text_images(name, features):
     else : # Mode sombre
         mode_clair = False
         V = random.randint(20,40)/100
-        text_color = (255,255,255)
+        text_color = (random.randint(220,255),random.randint(220,255),random.randint(220,255))
     
     background_color  = hsv2rgb(H,S,V)
 
@@ -411,7 +411,7 @@ def create_text_images(name, features):
     text = generate_text(length = 500, maxi=700)
     #size_text = int(W/random.randint(1.5*10,1.5*70))
     size_text = random.randint(40,60)
-    font = ImageFont.truetype('fonts/' + font_chosen, size_text)
+    font = ImageFont.truetype('fonts/selected_fonts/' + font_chosen, size_text)
     
     text_wrapped = text_wrap(text,font,image_editable,W,H)
     """
@@ -457,6 +457,6 @@ if __name__ == "__main__":
     #font_dt = pd.DataFrame({"fonts" : fonts})
     #font_dt.to_csv("text_images_generated/fonts.csv")
     for k in range(10):
-        generate_text_images(n = 500, start=1602+500*k)
+        generate_text_images(n = 500, start=3502+500*k)
     
     #Generate images of text for font recognition 

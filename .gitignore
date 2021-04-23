@@ -9,4 +9,5 @@ Slide Generator/.vscode
 models/object_detection/checkpoint
 models/object_detection/saved_model
 App/input_images
+App/output_images
 
