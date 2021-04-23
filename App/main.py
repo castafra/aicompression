@@ -79,7 +79,8 @@ tab1_content = dbc.Card([
 tab2_content = dbc.Card([
     dbc.CardBody(
     [
-        dbc.Row("Please add a slide on sheet 1", className="btn-white font-weight-bold"),
+        dbc.Row("Please add a slide on sheet 1", id='instruction-0',
+                className="btn-white font-weight-bold"),
         dbc.Row([
             dbc.Col(html.Div(id='image-uploaded-2'), width=5),
             dbc.Col([
@@ -97,7 +98,7 @@ tab2_content = dbc.Card([
 tab3_content = dbc.Card(
     dbc.CardBody(
         [
-            dbc.Row("Please add a slide on sheet 1", className="btn-white font-weight-bold"),
+            dbc.Row("Please add a slide on sheet 1", className="btn-white font-weight-bold", id='instruction-1'),
             dbc.Row(html.Div(id='text-box-button')),
             dbc.Col(html.Div(children=[],id='text-boxes'), width=12),
         ])
@@ -107,7 +108,8 @@ tab3_content = dbc.Card(
 tab4_content = dbc.Card(
     dbc.CardBody(
         [
-            dbc.Row("Please add a slide on sheet 1", className="btn-white font-weight-bold")
+            dbc.Row("Please add a slide on sheet 1", className="btn-white font-weight-bold",
+                    id='instruction-2')
         ]
     ),
     className="mt-3",
@@ -324,6 +326,23 @@ def run_script_onClick(n_clicks, filename, contents):
         #ax.text(3, 8, text, style='italic',
         #bbox={'facecolor': 'red', 'alpha': 0.5, 'pad': 10})
     return fig'''
+
+#remove instructions after image input
+@app.callback(Output('instruction-0', 'style'), [Input('upload-image','contents')])
+def hide_graph(input):
+    if input:
+        return {'display':'None'}
+
+@app.callback(Output('instruction-1', 'style'), [Input('upload-image','contents')])
+def hide_graph(input):
+    if input:
+        return {'display':'None'}
+
+@app.callback(Output('instruction-2', 'style'), [Input('upload-image','contents')])
+def hide_graph(input):
+    if input:
+        return {'display':'None'}
+
 
 if __name__ == '__main__':
     app.run_server(debug=True, dev_tools_ui=False) 
